@@ -1,39 +1,37 @@
 using System;
 using Akka.Actor;
 
-namespace WinTail
+namespace WinTail;
+
+/// <summary>
+/// Actor responsible for reading FROM the console. 
+/// Also responsible for calling <see cref="ActorSystem.Terminate"/>.
+/// </summary>
+internal class ConsoleReaderActor : UntypedActor
 {
-    /// <summary>
-    /// Actor responsible for reading FROM the console. 
-    /// Also responsible for calling <see cref="ActorSystem.Terminate"/>.
-    /// </summary>
-    class ConsoleReaderActor : UntypedActor
+    private const string ExitCommand = "exit";
+    private readonly IActorRef _consoleWriterActor;
+
+    public ConsoleReaderActor(IActorRef consoleWriterActor)
     {
-        public const string ExitCommand = "exit";
-        private IActorRef _consoleWriterActor;
+        _consoleWriterActor = consoleWriterActor;
+    }
 
-        public ConsoleReaderActor(IActorRef consoleWriterActor)
+    protected override void OnReceive(object message)
+    {
+        var read = Console.ReadLine();
+        if (!string.IsNullOrEmpty(read) && String.Equals(read, ExitCommand, StringComparison.OrdinalIgnoreCase))
         {
-            _consoleWriterActor = consoleWriterActor;
+            // shut down the system (acquire handle to system via
+            // this actors context)
+            Context.System.Terminate();
+            return;
         }
 
-        protected override void OnReceive(object message)
-        {
-            var read = Console.ReadLine();
-            if (!string.IsNullOrEmpty(read) && String.Equals(read, ExitCommand, StringComparison.OrdinalIgnoreCase))
-            {
-                // shut down the system (acquire handle to system via
-                // this actors context)
-                Context.System.Terminate();
-                return;
-            }
-
-            // send input to the console writer to process and print
-            // YOU NEED TO FILL IN HERE
-
-            // continue reading messages from the console
-            // YOU NEED TO FILL IN HERE
-        }
-
+        // send input to the console writer to process and print
+        _consoleWriterActor.Tell(read);
+            
+        // continue reading messages from the console
+        Self.Tell("continue");
     }
 }
