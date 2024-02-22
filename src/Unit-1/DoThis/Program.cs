@@ -8,10 +8,10 @@ var consoleWriterActor = myActorSystem.ActorOf(consoleWriterProps, "consoleWrite
 var tailCoordinatorProps = Props.Create(() => new TailCoordinatorActor());
 var tailCoordinatorActor = myActorSystem.ActorOf(tailCoordinatorProps, "tailCoordinatorActor");
 
-var fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor, tailCoordinatorActor));
+var fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor));
 var fileValidatorActor  = myActorSystem.ActorOf(fileValidatorActorProps, "validationActor");
 
-var consoleReaderProps = Props.Create<ConsoleReaderActor>(fileValidatorActor );
+var consoleReaderProps = Props.Create<ConsoleReaderActor>();
 var consoleReaderActor = myActorSystem.ActorOf(consoleReaderProps, "consoleReaderActor");
 
 consoleReaderActor.Tell(ConsoleReaderActor.StartCommand);

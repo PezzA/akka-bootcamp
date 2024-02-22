@@ -3,25 +3,15 @@
     /// <summary>
     /// Actor that validates user input and signals result to others.
     /// </summary>
-    public class FileValidatorActor : UntypedActor
+    public class FileValidatorActor(IActorRef consoleWriterActor) : UntypedActor
     {
-        private readonly IActorRef _consoleWriterActor;
-        private readonly IActorRef _tailCoordinatorActor;
-
-        public FileValidatorActor(IActorRef consoleWriterActor,
-            IActorRef tailCoordinatorActor)
-        {
-            _consoleWriterActor = consoleWriterActor;
-            _tailCoordinatorActor = tailCoordinatorActor;
-        }
-
         protected override void OnReceive(object message)
         {
             var msg = message as string;
             if (string.IsNullOrEmpty(msg))
             {
                 // signal that the user needs to supply an input
-                _consoleWriterActor.Tell(new Messages.NullInputError("Input was blank. Please try again.\n"));
+                consoleWriterActor.Tell(new Messages.NullInputError("Input was blank. Please try again.\n"));
 
                 // tell sender to continue doing its thing (whatever that may be,
                 // this actor doesn't care)
@@ -33,17 +23,17 @@
                 if (valid)
                 {
                     // signal successful input
-                    _consoleWriterActor.Tell(new Messages.InputSuccess(
+                    consoleWriterActor.Tell(new Messages.InputSuccess(
                         string.Format("Starting processing for {0}", msg)));
 
                     // start coordinator
-                    _tailCoordinatorActor.Tell(new TailCoordinatorActor.StartTail(msg,
-                        _consoleWriterActor));
+                    Context.ActorSelection("akka://MyActorSystem/user/tailCoordinatorActor").Tell(
+                        new TailCoordinatorActor.StartTail(msg, consoleWriterActor));
                 }
                 else
                 {
                     // signal that input was bad
-                    _consoleWriterActor.Tell(new Messages.ValidationError(
+                    consoleWriterActor.Tell(new Messages.ValidationError(
                         string.Format("{0} is not an existing URI on disk.", msg)));
 
                     // tell sender to continue doing its thing (whatever that

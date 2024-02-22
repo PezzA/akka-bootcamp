@@ -4,7 +4,7 @@ namespace WinTail;
 /// Actor responsible for reading FROM the console. 
 /// Also responsible for calling <see cref="ActorSystem.Terminate"/>.
 /// </summary>
-internal class ConsoleReaderActor(IActorRef consoleValidationActor) : UntypedActor
+internal class ConsoleReaderActor : UntypedActor
 {
     public const string ExitCommand = "exit";
     public const string StartCommand = "start";
@@ -34,6 +34,6 @@ internal class ConsoleReaderActor(IActorRef consoleValidationActor) : UntypedAct
             return;
         }
 
-        consoleValidationActor.Tell(message);
+        Context.ActorSelection("akka://MyActorSystem/user/validationActor").Tell(message);
     }
 }
