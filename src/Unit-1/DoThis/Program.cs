@@ -1,48 +1,20 @@
-﻿using System;
-﻿using Akka.Actor;
-
-namespace WinTail
-{
-    #region Program
-    class Program
-    {
-        public static ActorSystem MyActorSystem;
-
-        static void Main(string[] args)
-        {
-            // initialize MyActorSystem
-            // YOU NEED TO FILL IN HERE
-
-            PrintInstructions();
-
-            // time to make your first actors!
-            //YOU NEED TO FILL IN HERE
-            // make consoleWriterActor using these props: Props.Create(() => new ConsoleWriterActor())
-            // make consoleReaderActor using these props: Props.Create(() => new ConsoleReaderActor(consoleWriterActor))
+﻿// initialize MyActorSystem
+var myActorSystem = ActorSystem.Create("MyActorSystem");
 
 
-            // tell console reader to begin
-            //YOU NEED TO FILL IN HERE
+var consoleWriterProps = Props.Create<ConsoleWriterActor>();
+var consoleWriterActor = myActorSystem.ActorOf(consoleWriterProps, "consoleWriteActor");
 
-            // blocks the main thread from exiting until the actor system is shut down
-            MyActorSystem.WhenTerminated.Wait();
-        }
+var tailCoordinatorProps = Props.Create(() => new TailCoordinatorActor());
+var tailCoordinatorActor = myActorSystem.ActorOf(tailCoordinatorProps, "tailCoordinatorActor");
 
-        private static void PrintInstructions()
-        {
-            Console.WriteLine("Write whatever you want into the console!");
-            Console.Write("Some lines will appear as");
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.Write(" red ");
-            Console.ResetColor();
-            Console.Write(" and others will appear as");
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write(" green! ");
-            Console.ResetColor();
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("Type 'exit' to quit this application at any time.\n");
-        }
-    }
-    #endregion
-}
+var fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor));
+var fileValidatorActor  = myActorSystem.ActorOf(fileValidatorActorProps, "validationActor");
+
+var consoleReaderProps = Props.Create<ConsoleReaderActor>();
+var consoleReaderActor = myActorSystem.ActorOf(consoleReaderProps, "consoleReaderActor");
+
+consoleReaderActor.Tell(ConsoleReaderActor.StartCommand);
+
+// blocks the main thread from exiting until the actor system is shut down
+myActorSystem.WhenTerminated.Wait();

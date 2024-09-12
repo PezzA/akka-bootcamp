@@ -1,39 +1,39 @@
-using System;
-using Akka.Actor;
+namespace WinTail;
 
-namespace WinTail
+/// <summary>
+/// Actor responsible for reading FROM the console. 
+/// Also responsible for calling <see cref="ActorSystem.Terminate"/>.
+/// </summary>
+internal class ConsoleReaderActor : UntypedActor
 {
-    /// <summary>
-    /// Actor responsible for reading FROM the console. 
-    /// Also responsible for calling <see cref="ActorSystem.Terminate"/>.
-    /// </summary>
-    class ConsoleReaderActor : UntypedActor
+    public const string ExitCommand = "exit";
+    public const string StartCommand = "start";
+
+    protected override void OnReceive(object message)
     {
-        public const string ExitCommand = "exit";
-        private IActorRef _consoleWriterActor;
-
-        public ConsoleReaderActor(IActorRef consoleWriterActor)
+        if (message.Equals(StartCommand))
         {
-            _consoleWriterActor = consoleWriterActor;
+            DoPrintInstructions();
         }
 
-        protected override void OnReceive(object message)
+        GetAndValidateInput();
+    }
+
+    private void DoPrintInstructions()
+    {
+        Console.WriteLine("Please provide the URI of a log file on disk.\n");
+    }
+
+    private void GetAndValidateInput()
+    {
+        var message = Console.ReadLine();
+
+        if (string.IsNullOrEmpty(message) && string.Equals(message, ExitCommand, StringComparison.OrdinalIgnoreCase))
         {
-            var read = Console.ReadLine();
-            if (!string.IsNullOrEmpty(read) && String.Equals(read, ExitCommand, StringComparison.OrdinalIgnoreCase))
-            {
-                // shut down the system (acquire handle to system via
-                // this actors context)
-                Context.System.Terminate();
-                return;
-            }
-
-            // send input to the console writer to process and print
-            // YOU NEED TO FILL IN HERE
-
-            // continue reading messages from the console
-            // YOU NEED TO FILL IN HERE
+            Context.System.Terminate();
+            return;
         }
 
+        Context.ActorSelection("akka://MyActorSystem/user/validationActor").Tell(message);
     }
 }
